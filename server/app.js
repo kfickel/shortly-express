@@ -8,6 +8,7 @@ const models = require('./models');
 
 const app = express();
 
+
 app.set('views', `${__dirname}/views`);
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -77,7 +78,57 @@ app.post('/links',
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+// html = new EJS({url: './views/signup.ejs'}).render();
+app.get('/signup', 
+  (req, res) => {
+    res.render('signup');
+  });
 
+app.post('/signup', function(req, res, next) {
+  var username = req.body.username;
+  var password = req.body.password;
+
+  models.Users.get({username: username})
+    .then(function(results) {
+      if (results === undefined) {
+        models.Users.create({username, password});
+        res.redirect('/');
+        res.status(201).send('');
+      } else {
+        res.redirect('/signup');
+      }
+    })
+    .catch(function(err) {
+    });
+});
+
+app.get('/login', 
+  (req, res) => {
+    res.render('login');
+  });
+
+app.post('/login', function(req, res, next) {
+  var username = req.body.username;
+  var password = req.body.password;
+  models.Users.get({username: username})
+    .then(function(results) {
+      console.log('results ', results.password);
+      var verified = models.Users.compare(password, results.password, results.salt);
+      if (verified) {
+        res.redirect('/');
+        res.status(201).send('');
+      } else {
+        res.redirect('/login');
+        res.send('wrong');
+      }
+    })
+    .catch(function(err) {
+      res.redirect('/signup');
+      res.send('wrong');
+    });
+
+  
+});
 
 
 /************************************************************/
