@@ -517,11 +517,12 @@ describe('', function() {
       });
     });
 
-    it.only('sets and stores a cookie on the client', function(done) {
+    it('sets and stores a cookie on the client', function(done) {
       requestWithSession('http://127.0.0.1:4568/', function(error, res, body) {
         if (error) { return done(error); }
         var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
-        console.log("COOKIES IN TEST: ", cookies);
+        // console.log("COOKIES IN TEST: ", cookies);
+        // console.log('RES In TEST ', res.client);
         expect(cookies.length).to.equal(1);
         done();
       });
@@ -541,6 +542,8 @@ describe('', function() {
         db.query(queryString, cookieValue, function(error, users) {
           if (error) { return done(error); }
           var user = users[0];
+          console.log('USER : ', user);
+          
           expect(user.username).to.equal('Vivian');
           done();
         });
