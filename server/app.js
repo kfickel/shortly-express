@@ -5,6 +5,7 @@ const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
 const models = require('./models');
+const Cookie = require('./middleware/cookieParser');
 
 const app = express();
 
@@ -75,6 +76,8 @@ app.post('/links',
     });
 });
 
+app.use(Cookie);
+app.use(Auth.createSession);
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -112,19 +115,19 @@ app.post('/login', function(req, res, next) {
   var password = req.body.password;
   models.Users.get({username: username})
     .then(function(results) {
-      console.log('results ', results.password);
+      // console.log('results ', results.password);
       var verified = models.Users.compare(password, results.password, results.salt);
       if (verified) {
         res.redirect('/');
-        res.status(201).send('');
+        // res.status(201).send('');
       } else {
         res.redirect('/login');
-        res.send('wrong');
+        // res.send('wrong');
       }
     })
     .catch(function(err) {
       res.redirect('/signup');
-      res.send('wrong');
+      // res.send('wrong');
     });
 
   
