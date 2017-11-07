@@ -16,6 +16,8 @@ app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(Cookie);
+app.use(Auth.createSession);
 
 
 
@@ -76,8 +78,6 @@ app.post('/links',
     });
 });
 
-app.use(Cookie);
-app.use(Auth.createSession);
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -105,6 +105,7 @@ app.post('/signup', function(req, res, next) {
     });
 });
 
+
 app.get('/login', 
   (req, res) => {
     res.render('login');
@@ -126,7 +127,7 @@ app.post('/login', function(req, res, next) {
       }
     })
     .catch(function(err) {
-      res.redirect('/signup');
+      res.redirect('/login');
       // res.send('wrong');
     });
 

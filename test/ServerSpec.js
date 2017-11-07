@@ -208,7 +208,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Account Login:', function() {
+  describe('Account Login:', function() {
 
     beforeEach(function(done) {
       var options = {
@@ -277,7 +277,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Sessions Schema:', function() {
+  describe('Sessions Schema:', function() {
     it('contains a sessions table', function(done) {
       var queryString = 'SELECT * FROM sessions';
       db.query(queryString, function(err, results) {
@@ -480,7 +480,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Sessions and cookies', function() {
+  describe('Sessions and cookies', function() {
     var requestWithSession;
     var cookieJar;
 
@@ -517,10 +517,11 @@ describe('', function() {
       });
     });
 
-    it('sets and stores a cookie on the client', function(done) {
+    it.only('sets and stores a cookie on the client', function(done) {
       requestWithSession('http://127.0.0.1:4568/', function(error, res, body) {
         if (error) { return done(error); }
         var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+        console.log("COOKIES IN TEST: ", cookies);
         expect(cookies.length).to.equal(1);
         done();
       });
