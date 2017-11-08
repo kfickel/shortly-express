@@ -539,7 +539,10 @@ describe('', function() {
           WHERE sessions.hash = ? AND users.id = sessions.userId
         `;
 
+        console.log('ARGS IN TEST : ', cookieValue);
+
         db.query(queryString, cookieValue, function(error, users) {
+          console.log('USERS : ', users);
           if (error) { return done(error); }
           var user = users[0];
           console.log('USER : ', user);
@@ -550,7 +553,7 @@ describe('', function() {
       });
     });
 
-    it('destroys session and cookie when logs out', function(done) {
+    xit('destroys session and cookie when logs out', function(done) {
       addUser(function(err, res, body) {
         if (err) { return done(err); }
         var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
@@ -574,7 +577,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Privileged Access:', function() {
+  describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {

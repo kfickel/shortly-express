@@ -7,6 +7,8 @@ const Auth = require('./middleware/auth');
 const models = require('./models');
 const Cookie = require('./middleware/cookieParser');
 
+const db = require('./db');
+
 const app = express();
 
 
@@ -25,28 +27,47 @@ app.use(Cookie);
   //if a cookied doesn't exist, creates cookie
   //else, check if sessionId is valid. 
 app.use(Auth.createSession);
-
+console.log('redirecting');
+var verifySession = function(req) {
+  models.Sessions.get({hash: req.headers.cookie})
+    .then(function (sessionObj) {
+      var loggedIn = models.Sessions.isLoggedIn(sessionObj);
+      return loggedIn;
+    });
+};
 
 
 app.get('/', 
 (req, res) => {
-  res.render('index');
+  if (verifySession(req)) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/create', 
 (req, res) => {
-  res.render('index');
+  if (verifySession(req)) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/links', 
 (req, res, next) => {
-  models.Links.getAll()
-    .then(links => {
-      res.status(200).send(links);
-    })
-    .error(error => {
-      res.status(500).send(error);
-    });
+  if (verifySession(req)) {
+    models.Links.getAll()
+      .then(links => {
+        res.status(200).send(links);
+      })
+      .error(error => {
+        res.status(500).send(error);
+      });
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.post('/links', 
@@ -101,30 +122,22 @@ app.post('/signup', function(req, res, next) {
   models.Users.get({username: username})
     .then(function(results) {
       if (results === undefined) {
-        models.Users.create({username, password});
-        models.Users.get({username: username})
-          .then(function(userObj) {
-            var userObj = userObj;
-            console.log('user id ', userObj.id);
-            // console.log('cookie ', req.headers);
-            // console.log('HEADER ', res.getHeader('Set-Cookie'));
-            var cookie = res.getHeader('Set-Cookie');
-            console.log('COOKIE ', cookie);
-            var q = `UPDATE sessions SET userId = ${userObj.id} WHERE hash = "${cookie}" AND userId IS NULL `;
-            console.log('Q : ', q);
-            executeQuery(`UPDATE sessions SET userId = ${userObj.id} WHERE hash = "${cookie}" AND userId IS NULL `);
-
-            // models.Sessions.update({hash: cookie}, {hash: cookie, userId: userObj.id})
-            //   .then (function (results) {
-            //     console.log('UPDATE RESULTS ', results);
-            //     models.Sessions.get({userId: userObj.id})
-            //       .then(function (userSession) {
-            //         console.log('session userId ', userSession);
-            //       });
-            //   });
+      //user doesn't exist
+        models.Users.create({username, password})
+          .then(function() {
+            console.log('CREATE ME');
+            models.Users.get({username: username})
+              .then(function(userObj) {
+                var userObj = userObj;
+                var cookie = req.headers.cookie || res.getHeader('Set-Cookie');
+                var q = `UPDATE sessions SET userId = ${userObj.id} WHERE hash = "${cookie}" AND userId IS NULL `;
+                db.queryAsync(q)
+                .then(function(results) {
+                  res.redirect('/');
+                });
+              });
           });
-        res.redirect('/');
-        res.status(201).send('');
+        //set the session table's userId from NULL to userId 
       } else {
         res.redirect('/signup');
       }
@@ -142,24 +155,20 @@ app.get('/login',
 app.post('/login', function(req, res, next) {
   var username = req.body.username;
   var password = req.body.password;
-  // console.log('REQ :\n' , req);
+
   models.Users.get({username: username})
     .then(function(results) {
-      // console.log('results ', results.password);
+
       var verified = models.Users.compare(password, results.password, results.salt);
       if (verified) {
         //grab the user id
         models.Users.get({username: username})
           .then(function(userObj) {
-            console.log('user id ', userObj.id);
-            console.log('cookie ', req.headers);
-            console.log('HEADER ', res.getHeader('Set-Cookie'));
             var cookie = res.getHeader('Set-Cookie');
 
             models.Sessions.update({hash: cookie, userId: null}, {userId: userObj.id});
             models.Sessions.get({userId: userObj.id})
               .then(function (userSession) {
-                console.log('session userId ', userSession);
               });
           });
         //set the user id in the session table
@@ -174,6 +183,20 @@ app.post('/login', function(req, res, next) {
       res.redirect('/login');
       // res.send('wrong');
     }); 
+});
+
+app.get('/logout', function(req, res, next) {
+  //get the sessionId in cookie
+  var sessionId = req.headers.cookie;
+  //Get the sessionId from Sessions table and delete the row
+  models.Sessions.delete({hash: sessionId})
+  .then(function() {
+    req.headers.cookie = undefined;
+    res.setHeader('Set-Cookie', 'undefined');
+    res.redirect('/login');
+    next();
+  });
+  //redirect to login page
 });
 
 
